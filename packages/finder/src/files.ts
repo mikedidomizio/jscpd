@@ -74,24 +74,30 @@ function addContentToEntry(entry: Entry): EntryWithContent {
 
 export function getFilesToDetect(options: IOptions): EntryWithContent[] {
   const pattern = options.pattern || '**/*';
-  let patterns = options.path;
+  let path = options.path;
 
   if (options.noSymlinks) {
-    patterns = patterns.filter((path: string) => !isSymlink(path));
+    path = path.filter((path: string) => !isSymlink(path));
   }
 
-  patterns = patterns.map((path: string) => {
-    const currentPath = realpathSync(path);
+  const patternArr = pattern.split(',')
+
+  const pathArr: string[] = path.reduce((acc, cur) => {
+    const currentPath = realpathSync(cur)
 
     if (isFile(currentPath)) {
-      return path;
+      acc.push(currentPath)
     }
 
-    return path.endsWith('/') ? `${path}${pattern}` : `${path}/${pattern}`;
-  });
+    patternArr.forEach((patt) => {
+      acc.push(cur.endsWith('/') ? `${path}${patt}` : `${path}/${patt}`)
+    })
+
+    return acc
+  }, [])
 
   return sync(
-    patterns,
+    pathArr,
     {
       ignore: options.ignore,
       onlyFiles: true,
